@@ -39,7 +39,7 @@ public class TellstickRawEventListener implements RawDeviceEventListener {
 
     @Override
     public void rawDeviceEvent(RawDeviceEvent event) {
-        logger.info("Event data: " + event.getParameters());
+        logger.debug("Event data: " + event.getParameters());
 
         String eventClass = event.get_Class();
 
@@ -126,6 +126,6 @@ public class TellstickRawEventListener implements RawDeviceEventListener {
             return Optional.empty();
         }
 
-        return Optional.of(String.format("%s/%s", topic, method));
+        return Optional.of(String.format("command/%s/%s", topic, method));
     }
 }
