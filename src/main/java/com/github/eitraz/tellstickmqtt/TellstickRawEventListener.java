@@ -3,6 +3,7 @@ package com.github.eitraz.tellstickmqtt;
 import com.eitraz.tellstick.core.Tellstick;
 import com.eitraz.tellstick.core.rawdevice.RawDeviceEventListener;
 import com.eitraz.tellstick.core.rawdevice.events.RawDeviceEvent;
+import com.eitraz.tellstick.core.util.TimeoutHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.time.Duration;
 import java.util.Optional;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -20,11 +22,13 @@ public class TellstickRawEventListener implements RawDeviceEventListener {
 
     private final Tellstick tellstick;
     private final MqttComponent mqtt;
+    private final TimeoutHandler<String> timeoutHandler;
 
     @Autowired
     public TellstickRawEventListener(Tellstick tellstick, MqttComponent mqtt) {
         this.tellstick = tellstick;
         this.mqtt = mqtt;
+        this.timeoutHandler = new TimeoutHandler<>();
     }
 
     @PostConstruct
@@ -40,6 +44,12 @@ public class TellstickRawEventListener implements RawDeviceEventListener {
     @Override
     public void rawDeviceEvent(RawDeviceEvent event) {
         logger.debug("Event data: " + event.getParameters());
+
+        // Don't spam burst events
+        if (!timeoutHandler.isReady(event.getParameters().toString(), Duration.ofSeconds(2))) {
+            logger.debug(String.format("To soon, handle '%s'", event));
+            return;
+        }
 
         String eventClass = event.get_Class();
 
