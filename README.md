@@ -1,6 +1,6 @@
 # Tellstick Duo MQTT bridge
 
-Publish raw event data to MQTT topics.
+Spring boot application to publish raw Tellstick event data to MQTT topics.
 
 ## Sensor values
 
@@ -24,3 +24,13 @@ The data is either the same as method, or the `level` property value if availabl
 For example:
 * `turnon` would be published to `command/8040222/10/0/turnon` when a raw event for house 8040222, unit 10, group 0 with method `turnon` is received by the Tellstick.
 * `155` would be published to `command/8040222/10/0/dim` when a raw event with method `dim` and value `155` is received by the Tellstick.
+
+## Properties
+
+```properties
+# MQTT
+mqtt.host=MQTT server host
+mqtt.port=MQTT server port
+mqtt.username=MQTT server username
+mqtt.password=MQTT server password
+```
