@@ -12,7 +12,9 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -24,11 +26,14 @@ public class TellstickRawEventListener implements RawDeviceEventListener {
     private final MqttComponent mqtt;
     private final TimeoutHandler<String> timeoutHandler;
 
+    private final Map<String, Double> lastValues;
+
     @Autowired
     public TellstickRawEventListener(Tellstick tellstick, MqttComponent mqtt) {
         this.tellstick = tellstick;
         this.mqtt = mqtt;
         this.timeoutHandler = new TimeoutHandler<>();
+        this.lastValues = new ConcurrentHashMap<>();
     }
 
     @PostConstruct
@@ -46,8 +51,8 @@ public class TellstickRawEventListener implements RawDeviceEventListener {
         logger.debug("Event data: " + event.getParameters());
 
         // Don't spam burst events
-        if (!timeoutHandler.isReady(event.getParameters().toString(), Duration.ofSeconds(2))) {
-            logger.debug(String.format("To soon, handle '%s'", event));
+        if (!timeoutHandler.isReady(event.getParameters().toString(), Duration.ofSeconds(5))) {
+            logger.debug(String.format("To soon, won't handle '%s'", event));
             return;
         }
 
@@ -74,13 +79,33 @@ public class TellstickRawEventListener implements RawDeviceEventListener {
 
         // Temperature
         if (isNotBlank(temperature)) {
-            mqtt.publish(getSensorTopicName(id, "temperature"), temperature);
+            publishTemperatureOrHumidity(getSensorTopicName(id, "temperature"), temperature);
         }
 
         // Humidity
         if (isNotBlank(humidity)) {
-            mqtt.publish(getSensorTopicName(id, "humidity"), humidity);
+            publishTemperatureOrHumidity(getSensorTopicName(id, "humidity"), humidity);
+
         }
+    }
+
+    private void publishTemperatureOrHumidity(String topicName, String value) {
+        try {
+            double number = Double.parseDouble(value);
+
+            Double previousNumber = lastValues.getOrDefault(topicName, number);
+
+            lastValues.put(topicName, number);
+
+            // Don't publish to large steps
+            if (Math.abs(previousNumber - number) > 10d) {
+                return;
+            }
+        } catch (NumberFormatException e) {
+            logger.debug(String.format("Unable to parse numeric value from '%s'", value));
+        }
+
+        mqtt.publish(topicName, value);
     }
 
     /**

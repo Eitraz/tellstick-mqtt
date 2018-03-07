@@ -70,7 +70,7 @@ public class MqttComponent implements Listener {
     public synchronized void publish(String topic, String data) {
         if (isConnected) {
             // Attempt to prevent spamming the same message to a topic when having multiple instances of tellstick-mqtt
-            if (!timeoutHandler.isReady(topic + "::" + data, Duration.ofSeconds(2))) {
+            if (!timeoutHandler.isReady(topic + "::" + data, Duration.ofSeconds(5))) {
                 logger.debug(String.format("To soon, wont publish '%s' to topic '%s'", data, topic));
                 return;
             }
