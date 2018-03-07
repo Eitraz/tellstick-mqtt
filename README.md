@@ -1,6 +1,6 @@
 # Tellstick Duo MQTT bridge
 
-Publish raw event data to a MQTT topic.
+Publish raw event data to MQTT topics.
 
 ## Sensor values
 
