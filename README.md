@@ -34,3 +34,25 @@ mqtt.port=MQTT server port
 mqtt.username=MQTT server username
 mqtt.password=MQTT server password
 ```
+
+## Docker
+
+Build using Maven
+```
+mvn clean package
+```
+
+Build docker image, attach the JAR file as argument.
+```
+docker build --build-arg JAR_FILE=target/tellstick-mqtt-1.0-SNAPSHOT.jar -t tellstick-mqtt .
+```
+
+Create a docker container, attach tellstick.conf volume and Tellstick Duo USB device.
+```
+docker create --name tellstick-mqtt -v /root/tellstick.conf:/etc/tellstick.conf --device=/dev/bus/usb/002/004 --restart unless-stopped tellstick-mqtt
+```
+
+Start the container
+```
+docker start tellstick-mqtt
+```
