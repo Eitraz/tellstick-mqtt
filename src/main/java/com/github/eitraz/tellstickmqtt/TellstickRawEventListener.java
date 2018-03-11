@@ -95,12 +95,12 @@ public class TellstickRawEventListener implements RawDeviceEventListener {
 
             Double previousNumber = lastValues.getOrDefault(topicName, number);
 
-            lastValues.put(topicName, number);
-
             // Don't publish to large steps
-            if (Math.abs(previousNumber - number) > 10d) {
+            if (Math.abs(previousNumber - number) > 30d) {
                 return;
             }
+
+            lastValues.put(topicName, number);
         } catch (NumberFormatException e) {
             logger.debug(String.format("Unable to parse numeric value from '%s'", value));
         }
