@@ -96,7 +96,11 @@ public class TellstickRawEventListener implements RawDeviceEventListener {
             Double previousNumber = lastValues.getOrDefault(topicName, number);
 
             // Don't publish to large steps
-            if (Math.abs(previousNumber - number) > 30d) {
+            if (Math.abs(previousNumber - number) > 20d) {
+                return;
+            }
+            // Don't publish to cold or to warm
+            else if (number < 70 || number > 45) {
                 return;
             }
 
