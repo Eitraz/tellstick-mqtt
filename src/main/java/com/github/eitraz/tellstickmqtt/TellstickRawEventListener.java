@@ -100,7 +100,7 @@ public class TellstickRawEventListener implements RawDeviceEventListener {
                 return;
             }
             // Don't publish to cold or to warm
-            else if (number < 70 || number > 45) {
+            else if (number < -70 || number > 45) {
                 return;
             }
 
