@@ -97,16 +97,14 @@ public class TellstickRawEventListener implements RawDeviceEventListener {
 
             // Don't publish to large steps
             if (Math.abs(previousNumber - number) > 20d) {
-                return;
-            }
-            // Don't publish to cold or to warm
-            else if (topicName.contains("temperature") && (number < -70 || number > 45)) {
+                logger.debug("Diff between current (" + number + ") and previous value (" + previousNumber + ") is to large and will be skipped");
                 return;
             }
 
             lastValues.put(topicName, number);
         } catch (NumberFormatException e) {
-            logger.debug(String.format("Unable to parse numeric value from '%s'", value));
+            logger.warn(String.format("Unable to parse numeric value from '%s'", value));
+            return;
         }
 
         mqtt.publish(topicName, value);
