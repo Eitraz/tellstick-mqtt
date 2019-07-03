@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,6 +28,7 @@ public class TellstickRawEventListener implements RawDeviceEventListener {
     private final TimeoutHandler<String> timeoutHandler;
 
     private final Map<String, Double> lastValues;
+    private final Map<String, LocalDateTime> lastPublished;
 
     @Autowired
     public TellstickRawEventListener(Tellstick tellstick, MqttComponent mqtt) {
@@ -34,6 +36,7 @@ public class TellstickRawEventListener implements RawDeviceEventListener {
         this.mqtt = mqtt;
         this.timeoutHandler = new TimeoutHandler<>();
         this.lastValues = new ConcurrentHashMap<>();
+        this.lastPublished = new ConcurrentHashMap<>();
     }
 
     @PostConstruct
@@ -91,17 +94,20 @@ public class TellstickRawEventListener implements RawDeviceEventListener {
 
     private void publishTemperatureOrHumidity(String topicName, String value) {
         try {
+            LocalDateTime now = LocalDateTime.now();
             double number = Double.parseDouble(value);
 
             Double previousNumber = lastValues.getOrDefault(topicName, number);
+            LocalDateTime published = this.lastPublished.getOrDefault(topicName, now);
 
             // Don't publish to large steps
-            if (Math.abs(previousNumber - number) > 20d) {
+            if (Math.abs(previousNumber - number) > 5d && published.plusMinutes(10).isAfter(now)) {
                 logger.debug("Diff between current (" + number + ") and previous value (" + previousNumber + ") is to large and will be skipped");
                 return;
             }
 
             lastValues.put(topicName, number);
+            lastPublished.put(topicName, now);
         } catch (NumberFormatException e) {
             logger.warn(String.format("Unable to parse numeric value from '%s'", value));
             return;
